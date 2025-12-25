@@ -1,20 +1,21 @@
--- Zee Hood Streamproof Snapline + Optional FOV
--- Lock key: T | Toggle FOV: Y
+-- gernoHUB Snapline Panel
+-- by: sae
+-- Lock: T | Toggle FOV: Y | Panel toggle: RightAlt
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Camera = workspace.CurrentCamera
-
 local LocalPlayer = Players.LocalPlayer
 
--- ================= SETTINGS =================
-
+-- SETTINGS
 local FOV_RADIUS = 250
 local SHOW_FOV = true
+local PANEL_VISIBLE = true
+local PANEL_TRANSPARENCY = 0.5
+local TEXT_TRANSPARENCY = 0.5
 
--- ================= DRAWING =================
-
+-- DRAWING
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Radius = FOV_RADIUS
 FOVCircle.Thickness = 1.5
@@ -29,12 +30,129 @@ Snapline.Color = Color3.fromRGB(0, 0, 0)
 Snapline.Transparency = 1
 Snapline.Visible = false
 
--- ================= STATE =================
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "gernoHUBPanel"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 260, 0, 200)
+MainFrame.Position = UDim2.new(0.5, -130, 0.5, -100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+MainFrame.BackgroundTransparency = PANEL_TRANSPARENCY
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = PANEL_VISIBLE
+MainFrame.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainFrame
+
+-- ⚠️ Disclaimer
+local Disclaimer = Instance.new("TextLabel")
+Disclaimer.Size = UDim2.new(1, -10, 0, 30)
+Disclaimer.Position = UDim2.new(0, 5, 0, 5)
+Disclaimer.BackgroundTransparency = 1
+Disclaimer.Text = "⚠️ Not a cheat. Visual/educational script only."
+Disclaimer.TextColor3 = Color3.fromRGB(255, 200, 0)
+Disclaimer.TextTransparency = TEXT_TRANSPARENCY
+Disclaimer.Font = Enum.Font.GothamBold
+Disclaimer.TextSize = 14
+Disclaimer.TextWrapped = true
+Disclaimer.Parent = MainFrame
+
+-- Title
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Position = UDim2.new(0, 0, 0, 35)
+Title.BackgroundTransparency = 1
+Title.Text = "gernoHUB"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextTransparency = TEXT_TRANSPARENCY
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 20
+Title.Parent = MainFrame
+
+-- Credits
+local Credits = Instance.new("TextLabel")
+Credits.Size = UDim2.new(1, 0, 0, 20)
+Credits.Position = UDim2.new(0,0,0,65)
+Credits.BackgroundTransparency = 1
+Credits.Text = "by: sae"
+Credits.TextColor3 = Color3.fromRGB(180, 180, 180)
+Credits.TextTransparency = TEXT_TRANSPARENCY
+Credits.Font = Enum.Font.Gotham
+Credits.TextSize = 14
+Credits.Parent = MainFrame
+
+-- Show FOV toggle button
+local FOVButton = Instance.new("TextButton")
+FOVButton.Size = UDim2.new(0, 200, 0, 40)
+FOVButton.Position = UDim2.new(0.5, -100, 0, 90)
+FOVButton.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+FOVButton.BackgroundTransparency = 0.3
+FOVButton.Text = "FOV: ON"
+FOVButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FOVButton.TextTransparency = TEXT_TRANSPARENCY
+FOVButton.Font = Enum.Font.GothamBold
+FOVButton.TextSize = 16
+FOVButton.Parent = MainFrame
+
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+ButtonCorner.Parent = FOVButton
+
+-- Keybind Cheat-Sheet
+local CheatSheet = Instance.new("TextLabel")
+CheatSheet.Size = UDim2.new(1, -20, 0, 70)
+CheatSheet.Position = UDim2.new(0, 10, 0, 140)
+CheatSheet.BackgroundTransparency = 1
+CheatSheet.TextColor3 = Color3.fromRGB(255, 255, 255)
+CheatSheet.TextTransparency = TEXT_TRANSPARENCY
+CheatSheet.Font = Enum.Font.Gotham
+CheatSheet.TextSize = 14
+CheatSheet.TextWrapped = true
+CheatSheet.Text = [[Keybinds:
+T - Lock/Unlock Target
+Y - Toggle FOV Circle
+RightAlt - Show/Hide Panel]]
+CheatSheet.Parent = MainFrame
+
+-- DRAG
+local dragging = false
+local dragStart, startPos
+
+Title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		dragStart = input.Position
+		startPos = MainFrame.Position
+	end
+end)
+
+Title.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = false
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+		local delta = input.Position - dragStart
+		MainFrame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+-- SNAPLINE STATE
 local LockedPlayer = nil
 
--- ================= UTILS =================
-
+-- UTILS
 local function getMousePos()
 	return UserInputService:GetMouseLocation()
 end
@@ -65,7 +183,18 @@ local function getClosestInFOV()
 	return closest
 end
 
--- ================= INPUT =================
+-- INPUT
+FOVButton.MouseButton1Click:Connect(function()
+	SHOW_FOV = not SHOW_FOV
+	FOVCircle.Visible = SHOW_FOV
+	if SHOW_FOV then
+		FOVButton.Text = "FOV: ON"
+		FOVButton.BackgroundColor3 = Color3.fromRGB(0,180,0)
+	else
+		FOVButton.Text = "FOV: OFF"
+		FOVButton.BackgroundColor3 = Color3.fromRGB(180,0,0)
+	end
+end)
 
 UserInputService.InputBegan:Connect(function(input, gp)
 	if gp then return end
@@ -82,11 +211,22 @@ UserInputService.InputBegan:Connect(function(input, gp)
 	if input.KeyCode == Enum.KeyCode.Y then
 		SHOW_FOV = not SHOW_FOV
 		FOVCircle.Visible = SHOW_FOV
+		if SHOW_FOV then
+			FOVButton.Text = "FOV: ON"
+			FOVButton.BackgroundColor3 = Color3.fromRGB(0,180,0)
+		else
+			FOVButton.Text = "FOV: OFF"
+			FOVButton.BackgroundColor3 = Color3.fromRGB(180,0,0)
+		end
+	end
+
+	if input.KeyCode == Enum.KeyCode.RightAlt then
+		PANEL_VISIBLE = not PANEL_VISIBLE
+		MainFrame.Visible = PANEL_VISIBLE
 	end
 end)
 
--- ================= RENDER =================
-
+-- RENDER
 RunService.RenderStepped:Connect(function()
 	local mousePos = getMousePos()
 	FOVCircle.Position = mousePos

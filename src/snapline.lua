@@ -1,6 +1,6 @@
 -- gernoHUB Snapline Panel
 -- by: sae
--- Lock: T | Toggle FOV: Y | Panel toggle: RightAlt
+-- Lock: T | Panel toggle: RightAlt
 
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
@@ -14,6 +14,7 @@ local SHOW_FOV = true
 local PANEL_VISIBLE = true
 local PANEL_TRANSPARENCY = 0.5
 local TEXT_TRANSPARENCY = 0.5
+local SnaplineColor = Color3.fromRGB(0,0,0)
 
 -- DRAWING
 local FOVCircle = Drawing.new("Circle")
@@ -26,7 +27,7 @@ FOVCircle.Visible = SHOW_FOV
 
 local Snapline = Drawing.new("Line")
 Snapline.Thickness = 2
-Snapline.Color = Color3.fromRGB(0, 0, 0)
+Snapline.Color = SnaplineColor
 Snapline.Transparency = 1
 Snapline.Visible = false
 
@@ -37,8 +38,8 @@ ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 260, 0, 200)
-MainFrame.Position = UDim2.new(0.5, -130, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 300, 0, 280)
+MainFrame.Position = UDim2.new(0.5, -150, 0.5, -140)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25,25,25)
 MainFrame.BackgroundTransparency = PANEL_TRANSPARENCY
 MainFrame.BorderSizePixel = 0
@@ -103,10 +104,60 @@ local ButtonCorner = Instance.new("UICorner")
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 ButtonCorner.Parent = FOVButton
 
+-- Snapline color sliders
+local function createSlider(name, yPos, default, callback)
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0, 50, 0, 20)
+	label.Position = UDim2.new(0, 10, 0, yPos)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.fromRGB(255,255,255)
+	label.TextTransparency = TEXT_TRANSPARENCY
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+	label.Parent = MainFrame
+
+	local slider = Instance.new("TextBox")
+	slider.Size = UDim2.new(0, 100, 0, 20)
+	slider.Position = UDim2.new(0, 70, 0, yPos)
+	slider.Text = tostring(default)
+	slider.ClearTextOnFocus = false
+	slider.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	slider.TextColor3 = Color3.fromRGB(255,255,255)
+	slider.TextTransparency = TEXT_TRANSPARENCY
+	slider.Font = Enum.Font.Gotham
+	slider.TextSize = 14
+	slider.Parent = MainFrame
+
+	slider.FocusLost:Connect(function()
+		local val = tonumber(slider.Text)
+		if val then
+			val = math.clamp(val, 0, 255)
+			callback(val)
+			slider.Text = tostring(val)
+		end
+	end)
+end
+
+createSlider("R", 140, 0, function(v)
+	SnaplineColor = Color3.fromRGB(v, SnaplineColor.G*255, SnaplineColor.B*255)
+	Snapline.Color = SnaplineColor
+end)
+
+createSlider("G", 170, 0, function(v)
+	SnaplineColor = Color3.fromRGB(SnaplineColor.R*255, v, SnaplineColor.B*255)
+	Snapline.Color = SnaplineColor
+end)
+
+createSlider("B", 200, 0, function(v)
+	SnaplineColor = Color3.fromRGB(SnaplineColor.R*255, SnaplineColor.G*255, v)
+	Snapline.Color = SnaplineColor
+end)
+
 -- Keybind Cheat-Sheet
 local CheatSheet = Instance.new("TextLabel")
-CheatSheet.Size = UDim2.new(1, -20, 0, 70)
-CheatSheet.Position = UDim2.new(0, 10, 0, 140)
+CheatSheet.Size = UDim2.new(1, -20, 0, 50)
+CheatSheet.Position = UDim2.new(0, 10, 0, 230)
 CheatSheet.BackgroundTransparency = 1
 CheatSheet.TextColor3 = Color3.fromRGB(255, 255, 255)
 CheatSheet.TextTransparency = TEXT_TRANSPARENCY
@@ -115,7 +166,6 @@ CheatSheet.TextSize = 14
 CheatSheet.TextWrapped = true
 CheatSheet.Text = [[Keybinds:
 T - Lock/Unlock Target
-Y - Toggle FOV Circle
 RightAlt - Show/Hide Panel]]
 CheatSheet.Parent = MainFrame
 
@@ -208,18 +258,6 @@ UserInputService.InputBegan:Connect(function(input, gp)
 		end
 	end
 
-	if input.KeyCode == Enum.KeyCode.Y then
-		SHOW_FOV = not SHOW_FOV
-		FOVCircle.Visible = SHOW_FOV
-		if SHOW_FOV then
-			FOVButton.Text = "FOV: ON"
-			FOVButton.BackgroundColor3 = Color3.fromRGB(0,180,0)
-		else
-			FOVButton.Text = "FOV: OFF"
-			FOVButton.BackgroundColor3 = Color3.fromRGB(180,0,0)
-		end
-	end
-
 	if input.KeyCode == Enum.KeyCode.RightAlt then
 		PANEL_VISIBLE = not PANEL_VISIBLE
 		MainFrame.Visible = PANEL_VISIBLE
@@ -244,6 +282,7 @@ RunService.RenderStepped:Connect(function()
 	if onScreen then
 		Snapline.From = mousePos
 		Snapline.To = Vector2.new(screenPos.X, screenPos.Y)
+		Snapline.Color = SnaplineColor
 		Snapline.Visible = true
 	else
 		Snapline.Visible = false
